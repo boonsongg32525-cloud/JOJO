@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS.com - ระบบจัดเก็บเอกสารออนไลน์อัจฉริยะ (Smart Document Cloud OS)</title>
+    <meta name="description" content="OS.com ระบบจัดการและจัดเก็บเอกสารออนไลน์ระดับพรีเมียม ค้นหา จัดเรียง รวมเอกสาร ถังขยะ กู้คืน เปลี่ยนชื่อ ดูรูปภาพ และปรับแต่งธีม">
+    
+    <!-- Google Fonts: Prompt & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="dark-glass">
+    <!-- OS Background Container with dynamic wallpaper support -->
+    <div id="os-wallpaper" class="os-wallpaper"></div>
+    <div class="os-overlay"></div>
+
+    <!-- Main OS Desktop Application Wrapper -->
+    <div class="os-app-container">
+        
+        <!-- Top Navigation / OS Menu Bar -->
+        <header class="os-topbar">
+            <div class="topbar-left">
+                <div class="os-logo" id="btn-home" title="กลับสู่หน้าแรก">
+                    <div class="logo-icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div class="logo-text">
+                        <span class="brand-name">OS<span class="accent">.com</span></span>
+                        <span class="brand-tag">DocManager OS</span>
+                    </div>
+                </div>
+
+                <!-- Breadcrumb Navigation -->
+                <nav class="breadcrumb-container" id="breadcrumb-container" aria-label="breadcrumb">
+                    <div class="breadcrumb-item" data-folder-id="root">
+                        <i class="fa-solid fa-house"></i>
+                        <span>คลังเอกสาร</span>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Global Search Bar (Feature 1) -->
+            <div class="topbar-search">
+                <div class="search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="global-search" placeholder="ค้นหาเอกสาร, รูปภาพ, โฟลเดอร์, แท็ก, หรือเนื้อหา... (Ctrl+K)" autocomplete="off">
+                    <button class="btn-clear-search" id="btn-clear-search" title="ล้างการค้นหา" style="display: none;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <span class="search-kbd-shortcut"><i class="fa-solid fa-command"></i> K</span>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+                <!-- Theme Button (Feature 10) -->
+                <button class="btn-icon-glass" id="btn-open-theme-modal" title="เปลี่ยนธีม / รูปพื้นหลัง (Theme)">
+                    <i class="fa-solid fa-palette"></i>
+                    <span class="btn-text-desktop">ปรับแต่งธีม</span>
+                </button>
+
+                <!-- New Document Button -->
+                <button class="btn-primary-glass" id="btn-create-doc" title="สร้างเอกสารใหม่">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>สร้างเอกสาร</span>
+                </button>
+
+                <!-- Upload File Button -->
+                <button class="btn-secondary-glass" id="btn-upload-file" title="อัปโหลดไฟล์/รูปภาพจากเครื่อง">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span class="btn-text-desktop">อัปโหลด</span>
+                </button>
+                <input type="file" id="file-input-hidden" multiple style="display: none;">
+
+                <!-- System Clock & Status -->
+                <div class="os-clock" id="os-clock">
+                    <span class="clock-time" id="clock-time">00:00</span>
+                    <span class="clock-date" id="clock-date">3 ก.ย. 2026</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="os-workspace">
+            
+            <!-- Left Sidebar Navigation -->
+            <aside class="os-sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-label">หมวดหมู่เอกสาร</div>
+                    <ul class="sidebar-menu">
+                        <li class="menu-item active" data-view="all" id="nav-all">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>เอกสารทั้งหมด</span>
+                            <span class="menu-badge" id="badge-all-count">0</span>
+                        </li>
+                        <li class="menu-item" data-view="images" id="nav-images">
+                            <i class="fa-solid fa-images"></i>
+                            <span>รูปภาพ (Images)</span>
+                            <span class="menu-badge" id="badge-images-count">0</span>
+                        </li>
+                        <li class="menu-item" data-view="recent" id="nav-recent">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            <span>เอกสารล่าสุด</span>
+                        </li>
+                        <li class="menu-item" data-view="folders" id="nav-folders">
+                            <i class="fa-solid fa-folder-tree"></i>
+                            <span>โฟลเดอร์ (Folders)</span>
+                            <span class="menu-badge" id="badge-folders-count">0</span>
+                        </li>
+                        <li class="menu-item" data-view="merged" id="nav-merged">
+                            <i class="fa-solid fa-object-group"></i>
+                            <span>เอกสารที่รวมแล้ว</span>
+                            <span class="menu-badge" id="badge-merged-count">0</span>
+                        </li>
+                        <li class="menu-item" data-view="favorites" id="nav-favorites">
+                            <i class="fa-solid fa-star"></i>
+                            <span>ติดดาว (รายการโปรด)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Date Filtering Section (Feature 2) -->
+                <div class="sidebar-section">
+                    <div class="sidebar-label">
+                        <span>จัดเก็บตามช่วงเวลา</span>
+                        <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <ul class="sidebar-menu date-filter-menu">
+                        <li class="menu-item date-filter-item active" data-date-filter="all">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>ทั้งหมด</span>
+                        </li>
+                        <li class="menu-item date-filter-item" data-date-filter="today">
+                            <i class="fa-solid fa-sun"></i>
+                            <span>วันนี้ (Today)</span>
+                        </li>
+                        <li class="menu-item date-filter-item" data-date-filter="week">
+                            <i class="fa-solid fa-calendar-week"></i>
+                            <span>สัปดาห์นี้</span>
+                        </li>
+                        <li class="menu-item date-filter-item" data-date-filter="month">
+                            <i class="fa-solid fa-calendar-day"></i>
+                            <span>เดือนนี้</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Trash Bin (Feature 5) -->
+                <div class="sidebar-section sidebar-bottom">
+                    <ul class="sidebar-menu">
+                        <li class="menu-item trash-item" data-view="trash" id="nav-trash">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>ถังขยะ (Recycle Bin)</span>
+                            <span class="menu-badge badge-trash" id="badge-trash-count">0</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Storage Info Card -->
+                <div class="storage-widget">
+                    <div class="storage-info-row">
+                        <span class="storage-title"><i class="fa-solid fa-hard-drive"></i> พื้นที่จัดเก็บ</span>
+                        <span class="storage-size" id="storage-usage-text">0 MB / 50 MB</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="storage-progress-bar" style="width: 10%;"></div>
+                    </div>
+                    <div class="storage-meta">ระบบจัดเก็บในเบราว์เซอร์ (Offline Ready)</div>
+                </div>
+            </aside>
+
+            <!-- Main Files Viewport -->
+            <main class="os-main-viewport">
+                
+                <!-- Main Header Toolbar -->
+                <div class="viewport-toolbar">
+                    <div class="toolbar-left">
+                        <h1 class="view-title" id="current-view-title">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>เอกสารทั้งหมด</span>
+                        </h1>
+                        <span class="items-count-tag" id="items-count-tag">กำลังโหลด...</span>
+                    </div>
+
+                    <div class="toolbar-right">
+                        <!-- Merge Documents Action Button (Feature 7) -->
+                        <button class="btn-toolbar btn-merge-selected" id="btn-merge-action" title="รวมเอกสารที่เลือกเข้าด้วยกัน" style="display: none;">
+                            <i class="fa-solid fa-object-group"></i>
+                            <span>รวมเอกสาร (<span id="selected-count">0</span>)</span>
+                        </button>
+
+                        <!-- Download Selected Button -->
+                        <button class="btn-toolbar" id="btn-download-selected" title="ดาวน์โหลดไฟล์ที่เลือกทั้งหมด" style="display: none;">
+                            <i class="fa-solid fa-download"></i>
+                            <span>ดาวน์โหลดที่เลือก</span>
+                        </button>
+
+                        <!-- Delete Selected Button (Feature 4) -->
+                        <button class="btn-toolbar btn-delete-selected" id="btn-delete-selected" title="ลบเอกสารที่เลือก" style="display: none;">
+                            <i class="fa-solid fa-trash"></i>
+                            <span>ลบที่เลือก</span>
+                        </button>
+
+                        <!-- New Folder Button (Feature 9) -->
+                        <button class="btn-toolbar" id="btn-new-folder" title="สร้างโฟลเดอร์ใหม่">
+                            <i class="fa-solid fa-folder-plus"></i>
+                            <span>+ โฟลเดอร์</span>
+                        </button>
+
+                        <!-- Sorting Dropdown (Feature 2 & Feature 3) -->
+                        <div class="dropdown-wrapper">
+                            <button class="btn-toolbar dropdown-toggle" id="btn-sort-toggle">
+                                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                                <span id="current-sort-label">เรียงตาม: วันที่ใหม่สุด</span>
+                                <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                            </button>
+                            <div class="dropdown-menu" id="sort-dropdown-menu">
+                                <div class="dropdown-header">จัดเรียงตามตัวอักษร (ก-ฮ / A-Z)</div>
+                                <button class="dropdown-item" data-sort="name-asc">
+                                    <i class="fa-solid fa-arrow-down-a-z"></i>
+                                    <span>ชื่อ ก - ฮ (A to Z)</span>
+                                </button>
+                                <button class="dropdown-item" data-sort="name-desc">
+                                    <i class="fa-solid fa-arrow-up-z-a"></i>
+                                    <span>ชื่อ ฮ - ก (Z to A)</span>
+                                </button>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-header">จัดเก็บตามวันที่ (Date)</div>
+                                <button class="dropdown-item active" data-sort="date-desc">
+                                    <i class="fa-solid fa-calendar-arrow-down"></i>
+                                    <span>วันที่จัดเก็บ: ใหม่สุด &rarr; เก่าสุด</span>
+                                </button>
+                                <button class="dropdown-item" data-sort="date-asc">
+                                    <i class="fa-solid fa-calendar-arrow-up"></i>
+                                    <span>วันที่จัดเก็บ: เก่าสุด &rarr; ใหม่สุด</span>
+                                </button>
+                                <div class="dropdown-divider"></div>
+                                <button class="dropdown-item" data-sort="size-desc">
+                                    <i class="fa-solid fa-weight-hanging"></i>
+                                    <span>ขนาดไฟล์ (มาก &rarr; น้อย)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- View Toggle: Grid / List -->
+                        <div class="view-mode-toggle">
+                            <button class="btn-toggle active" id="btn-view-grid" title="มุมมองตาราง (Grid)">
+                                <i class="fa-solid fa-table-cells-large"></i>
+                            </button>
+                            <button class="btn-toggle" id="btn-view-list" title="มุมมองรายการ (List)">
+                                <i class="fa-solid fa-list-ul"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trash Specific Top Bar (Shows only in Trash View - Feature 5) -->
+                <div class="trash-toolbar-banner" id="trash-banner" style="display: none;">
+                    <div class="trash-banner-info">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>เอกสารในถังขยะจะถูกเก็บไว้ที่นี่ สามารถกด <strong>"กู้เอกสารคืน"</strong> หรือ <strong>"ลบถาวร"</strong> ได้</span>
+                    </div>
+                    <div class="trash-banner-actions">
+                        <button class="btn-sm-glass btn-restore-all" id="btn-restore-all">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>กู้คืนเอกสารทั้งหมด</span>
+                        </button>
+                        <button class="btn-sm-glass btn-empty-trash" id="btn-empty-trash">
+                            <i class="fa-solid fa-fire-flame-curved"></i>
+                            <span>ล้างถังขยะถาวรทั้งหมด</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Filter Tags indicator -->
+                <div class="active-filter-bar" id="active-filter-bar" style="display: none;">
+                    <span class="filter-indicator-label">กำลังกรองข้อมูล:</span>
+                    <div class="filter-chips-container" id="filter-chips-container"></div>
+                    <button class="btn-clear-filters" id="btn-reset-filters">ล้างตัวกรองทั้งหมด</button>
+                </div>
+
+                <!-- File Drop Zone Area -->
+                <div class="file-drop-overlay" id="file-drop-overlay">
+                    <div class="drop-zone-content">
+                        <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                        <h3>ลากไฟล์หรือรูปภาพมาวางที่นี่เพื่ออัปโหลด</h3>
+                        <p>รองรับไฟล์รูปภาพ PNG, JPG, WebP, SVG และเอกสารทุกประเภท</p>
+                    </div>
+                </div>
+
+                <!-- Main Items Container -->
+                <div class="items-view-container grid-view" id="items-container">
+                    <!-- Dynamic Document and Folder items will be rendered here -->
+                </div>
+
+                <!-- Empty State View -->
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <div class="empty-icon-box">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <h3 id="empty-title">ไม่พบเอกสารในหมวดหมู่นี้</h3>
+                    <p id="empty-desc">คุณสามารถสร้างเอกสารใหม่, สร้างโฟลเดอร์ หรืออัปโหลดไฟล์รูปภาพเพื่อเริ่มต้นใช้งาน</p>
+                    <div class="empty-actions">
+                        <button class="btn-primary-glass" id="btn-empty-create">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>สร้างเอกสารใหม่</span>
+                        </button>
+                        <button class="btn-secondary-glass" id="btn-empty-upload">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>อัปโหลดไฟล์</span>
+                        </button>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODALS & DIALOGS -->
+    <!-- ================================================================= -->
+
+    <!-- 1. Delete Confirmation Modal (Feature 4 & 5) -->
+    <div class="modal-backdrop" id="modal-delete-confirm">
+        <div class="modal-card modal-card-confirm animate-pop">
+            <div class="modal-header-danger">
+                <div class="danger-icon-circle">
+                    <i class="fa-solid fa-trash-can"></i>
+                </div>
+                <h2 id="modal-delete-title">ยืนยันการลบเอกสาร</h2>
+            </div>
+            <div class="modal-body">
+                <p id="modal-delete-desc">คุณแน่ใจหรือไม่ว่าต้องการย้ายเอกสารนี้ไปยังถังขยะ?</p>
+                <div class="delete-item-preview" id="delete-item-preview">
+                    <i class="fa-solid fa-file-lines item-icon"></i>
+                    <span class="item-name" id="delete-item-name">ชื่อเอกสาร.pdf</span>
+                </div>
+                <div class="modal-notice-box" id="delete-notice-box">
+                    <i class="fa-solid fa-info-circle"></i>
+                    <span id="delete-notice-text">เอกสารจะถูกย้ายไปอยู่ในถังขยะ และสามารถกู้คืนได้ภายหลัง</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" id="btn-delete-cancel">
+                    <i class="fa-solid fa-xmark"></i>
+                    <span>ยกเลิก</span>
+                </button>
+                <button class="btn-modal btn-danger-confirm" id="btn-delete-confirm">
+                    <i class="fa-solid fa-check"></i>
+                    <span>ยืนยัน</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Rename Modal (Feature 8 & 9) -->
+    <div class="modal-backdrop" id="modal-rename">
+        <div class="modal-card animate-pop">
+            <div class="modal-header">
+                <div class="modal-title-with-icon">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <h2>เปลี่ยนชื่อ (Rename)</h2>
+                </div>
+                <button class="btn-close-modal" id="btn-close-rename-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-rename" class="modal-body">
+                <label for="rename-input" class="form-label">ชื่อใหม่ของเอกสารหรือโฟลเดอร์:</label>
+                <div class="input-with-icon">
+                    <i class="fa-solid fa-file-pen"></i>
+                    <input type="text" id="rename-input" class="form-input" required placeholder="ใส่ชื่อใหม่ที่นี่...">
+                </div>
+                <div class="form-hint">สามารถเปลี่ยนชื่อเอกสารเดี่ยว โฟลเดอร์ หรือเอกสารรวมได้</div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancel" id="btn-rename-cancel">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-primary" id="btn-rename-save">บันทึกชื่อใหม่</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. New Folder Modal (Feature 9) -->
+    <div class="modal-backdrop" id="modal-new-folder">
+        <div class="modal-card animate-pop">
+            <div class="modal-header">
+                <div class="modal-title-with-icon">
+                    <i class="fa-solid fa-folder-plus"></i>
+                    <h2>สร้างโฟลเดอร์ใหม่ (New Folder)</h2>
+                </div>
+                <button class="btn-close-modal" id="btn-close-folder-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-new-folder" class="modal-body">
+                <label for="folder-name-input" class="form-label">ชื่อโฟลเดอร์:</label>
+                <div class="input-with-icon">
+                    <i class="fa-solid fa-folder"></i>
+                    <input type="text" id="folder-name-input" class="form-input" required placeholder="เช่น เอกสารบัญชี, สัญญา 2026...">
+                </div>
+                <div class="color-picker-row">
+                    <label class="form-label">สีไอคอนโฟลเดอร์:</label>
+                    <div class="color-options" id="folder-color-options">
+                        <span class="color-dot active" data-color="#3b82f6" style="background-color: #3b82f6;" title="น้ำเงิน"></span>
+                        <span class="color-dot" data-color="#10b981" style="background-color: #10b981;" title="เขียว"></span>
+                        <span class="color-dot" data-color="#f59e0b" style="background-color: #f59e0b;" title="ส้ม"></span>
+                        <span class="color-dot" data-color="#ec4899" style="background-color: #ec4899;" title="ชมพู"></span>
+                        <span class="color-dot" data-color="#8b5cf6" style="background-color: #8b5cf6;" title="ม่วง"></span>
+                        <span class="color-dot" data-color="#06b6d4" style="background-color: #06b6d4;" title="ฟ้าคราม"></span>
+                    </div>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancel" id="btn-folder-cancel">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-primary" id="btn-folder-save">สร้างโฟลเดอร์</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Merge Documents Modal (Feature 7) -->
+    <div class="modal-backdrop" id="modal-merge">
+        <div class="modal-card modal-card-lg animate-pop">
+            <div class="modal-header">
+                <div class="modal-title-with-icon">
+                    <i class="fa-solid fa-object-group"></i>
+                    <h2>ระบบรวมเอกสาร (Merge Documents)</h2>
+                </div>
+                <button class="btn-close-modal" id="btn-close-merge-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="merge-tabs">
+                    <button class="merge-tab-btn active" data-merge-mode="folder">
+                        <i class="fa-solid fa-folder-closed"></i>
+                        <span>รวมเป็นโฟลเดอร์จัดเก็บชุด</span>
+                    </button>
+                    <button class="merge-tab-btn" data-merge-mode="file">
+                        <i class="fa-solid fa-file-zipper"></i>
+                        <span>รวมเนื้อหาเป็นเอกสารฉบับเดียว (.TXT/.MD)</span>
+                    </button>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="merge-name-input" class="form-label" id="merge-name-label">ชื่อโฟลเดอร์/เอกสารที่รวมใหม่:</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-pen-nib"></i>
+                        <input type="text" id="merge-name-input" class="form-input" placeholder="เช่น รวมเอกสารโครงการ_ชุดที่1">
+                    </div>
+                </div>
+
+                <div class="merge-items-selected-box">
+                    <div class="selected-box-header">
+                        <span>เอกสารที่เลือกมารวมกัน (<span id="merge-items-count">0</span> รายการ):</span>
+                    </div>
+                    <ul class="merge-selected-list" id="merge-selected-list">
+                        <!-- List of selected items rendered dynamically -->
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancel" id="btn-merge-cancel">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-primary" id="btn-merge-confirm">
+                    <i class="fa-solid fa-check-double"></i>
+                    <span>ยืนยันการรวมเอกสาร</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Theme Switcher & Custom Wallpaper Upload Modal (Feature 10) -->
+    <div class="modal-backdrop" id="modal-theme">
+        <div class="modal-card modal-card-lg animate-pop">
+            <div class="modal-header">
+                <div class="modal-title-with-icon">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <h2>ระบบเปลี่ยนธีม & พื้นหลัง (Theme Customizer)</h2>
+                </div>
+                <button class="btn-close-modal" id="btn-close-theme-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body theme-customizer-body">
+                
+                <!-- Preset Themes Grid -->
+                <div class="theme-section">
+                    <h3 class="theme-section-title"><i class="fa-solid fa-palette"></i> ธีมสำเร็จรูประดับพรีเมียม</h3>
+                    <div class="theme-presets-grid" id="theme-presets-grid">
+                        <div class="theme-card active" data-preset="dark-glass">
+                            <div class="theme-preview preview-dark-glass">
+                                <div class="preview-bar"></div>
+                                <div class="preview-item"></div>
+                            </div>
+                            <span class="theme-card-name">🌌 Deep Dark Glass</span>
+                        </div>
+                        <div class="theme-card" data-preset="cyber-neon">
+                            <div class="theme-preview preview-cyber-neon">
+                                <div class="preview-bar"></div>
+                                <div class="preview-item"></div>
+                            </div>
+                            <span class="theme-card-name">⚡ Cyber Neon</span>
+                        </div>
+                        <div class="theme-card" data-preset="aurora-sunset">
+                            <div class="theme-preview preview-aurora-sunset">
+                                <div class="preview-bar"></div>
+                                <div class="preview-item"></div>
+                            </div>
+                            <span class="theme-card-name">🌅 Aurora Sunset</span>
+                        </div>
+                        <div class="theme-card" data-preset="emerald-forest">
+                            <div class="theme-preview preview-emerald-forest">
+                                <div class="preview-bar"></div>
+                                <div class="preview-item"></div>
+                            </div>
+                            <span class="theme-card-name">🌿 Emerald Matrix</span>
+                        </div>
+                        <div class="theme-card" data-preset="macos-light">
+                            <div class="theme-preview preview-macos-light">
+                                <div class="preview-bar"></div>
+                                <div class="preview-item"></div>
+                            </div>
+                            <span class="theme-card-name">☀️ Minimalist Light</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Wallpaper Upload Section (Feature 10) -->
+                <div class="theme-section custom-wallpaper-section">
+                    <h3 class="theme-section-title">
+                        <i class="fa-solid fa-image"></i>
+                        <span>อัปโหลดรูปภาพธีมส่วนตัว (Custom Wallpaper)</span>
+                        <span class="badge-personal">เฉพาะเครื่องของคุณ</span>
+                    </h3>
+                    
+                    <div class="custom-upload-box" id="custom-wallpaper-dropzone">
+                        <input type="file" id="wallpaper-file-input" accept="image/png, image/jpeg, image/webp, image/jpg" style="display: none;">
+                        <div class="upload-placeholder" id="wallpaper-upload-placeholder">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <p><strong>คลิกที่นี่</strong> หรือ ลากไฟล์รูปภาพมาวาง เพื่อตั้งเป็นธีมของคุณ</p>
+                            <span class="upload-tip">รองรับไฟล์ PNG, JPG, WebP (รูปจะถูกบันทึกไว้ในเบราว์เซอร์ของคุณ)</span>
+                        </div>
+                        
+                        <!-- Custom Image Active Preview -->
+                        <div class="custom-wallpaper-preview" id="custom-wallpaper-preview" style="display: none;">
+                            <img id="custom-wallpaper-img" src="" alt="Custom Wallpaper Preview">
+                            <div class="custom-preview-overlay">
+                                <span class="active-badge"><i class="fa-solid fa-check"></i> กำลังใช้งานรูปนี้เป็นธีม</span>
+                                <div class="custom-preview-actions">
+                                    <button class="btn-sm-glass" id="btn-change-wallpaper"><i class="fa-solid fa-rotate"></i> เปลี่ยนรูป</button>
+                                    <button class="btn-sm-glass btn-danger" id="btn-remove-wallpaper"><i class="fa-solid fa-trash"></i> ลบรูปส่วนตัว</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Effects Adjuster -->
+                    <div class="effects-sliders">
+                        <div class="slider-group">
+                            <label for="slider-blur">
+                                <span>ความเบลอพื้นหลัง (Glass Blur):</span>
+                                <span class="slider-val" id="val-blur">20px</span>
+                            </label>
+                            <input type="range" id="slider-blur" min="0" max="40" value="20">
+                        </div>
+                        <div class="slider-group">
+                            <label for="slider-opacity">
+                                <span>ความโปร่งใสแผงหน้าต่าง (Glass Opacity):</span>
+                                <span class="slider-val" id="val-opacity">70%</span>
+                            </label>
+                            <input type="range" id="slider-opacity" min="20" max="95" value="70">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-primary" id="btn-theme-done">เสร็จสิ้น</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Create / Edit Document Modal -->
+    <div class="modal-backdrop" id="modal-editor">
+        <div class="modal-card modal-card-xl animate-pop">
+            <div class="modal-header">
+                <div class="modal-title-with-icon">
+                    <i class="fa-solid fa-file-circle-plus"></i>
+                    <h2 id="editor-modal-title">สร้างเอกสารใหม่</h2>
+                </div>
+                <button class="btn-close-modal" id="btn-close-editor-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-editor" class="modal-body editor-body">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="doc-title-input" class="form-label">ชื่อเอกสาร: *</label>
+                        <input type="text" id="doc-title-input" class="form-input" required placeholder="เช่น บันทึกการประชุมประจำเดือน.txt">
+                    </div>
+                    <div class="form-group">
+                        <label for="doc-type-select" class="form-label">ประเภทเอกสาร:</label>
+                        <select id="doc-type-select" class="form-select">
+                            <option value="txt">📝 ข้อความ (Text .txt)</option>
+                            <option value="md">📑 มาร์กดาวน์ (Markdown .md)</option>
+                            <option value="pdf">📕 จำลองเอกสาร PDF (.pdf)</option>
+                            <option value="docx">📘 เอกสารเวิร์ด (.docx)</option>
+                            <option value="xlsx">📊 เอกสารสเปรดชีต (.xlsx)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="doc-tags-input" class="form-label">ป้ายกำกับ (Tags - คั่นด้วยจุลภาค):</label>
+                    <input type="text" id="doc-tags-input" class="form-input" placeholder="การเงิน, ด่วน, งานโปรเจกต์">
+                </div>
+
+                <div class="form-group editor-content-group">
+                    <label for="doc-content-input" class="form-label">เนื้อหาเอกสาร (Content):</label>
+                    <textarea id="doc-content-input" class="form-textarea" rows="10" placeholder="พิมพ์เนื้อหาเอกสาร หรือบันทึกข้อความของคุณที่นี่..."></textarea>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-cancel" id="btn-editor-cancel">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-primary" id="btn-editor-save">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>บันทึกเอกสาร</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Document Viewer / Text Preview Modal -->
+    <div class="modal-backdrop" id="modal-viewer">
+        <div class="modal-card modal-card-xl animate-pop">
+            <div class="modal-header">
+                <div class="modal-title-with-icon">
+                    <i class="fa-solid fa-file-lines" id="viewer-type-icon"></i>
+                    <h2 id="viewer-doc-title">ดูเอกสาร</h2>
+                </div>
+                <div class="viewer-header-actions">
+                    <button class="btn-icon-glass" id="btn-viewer-download" title="ดาวน์โหลดเอกสารนี้">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <button class="btn-close-modal" id="btn-close-viewer-modal"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="modal-body viewer-body">
+                <div class="viewer-meta-bar">
+                    <span id="viewer-meta-date"><i class="fa-solid fa-calendar"></i> วันที่จัดเก็บ: -</span>
+                    <span id="viewer-meta-size"><i class="fa-solid fa-database"></i> ขนาด: -</span>
+                    <span id="viewer-meta-tags"><i class="fa-solid fa-tags"></i> แท็ก: -</span>
+                </div>
+                <div class="viewer-content-container" id="viewer-content-container">
+                    <!-- Dynamic Document Content Preview -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-secondary" id="btn-viewer-edit">
+                    <i class="fa-solid fa-pen"></i>
+                    <span>แก้ไข</span>
+                </button>
+                <button type="button" class="btn-modal btn-primary" id="btn-viewer-close">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. NEW: Interactive Image Viewer & Gallery Modal (ระบบดูรูปภาพ) -->
+    <div class="modal-backdrop" id="modal-image-viewer">
+        <div class="image-viewer-container animate-pop">
+            <!-- Top Controls Bar -->
+            <div class="img-viewer-topbar">
+                <div class="img-info-left">
+                    <i class="fa-solid fa-image img-badge-icon"></i>
+                    <div class="img-title-wrapper">
+                        <h2 id="img-viewer-title">รูปภาพ.png</h2>
+                        <span class="img-meta-badge" id="img-viewer-dimensions">1920 &times; 1080 &bull; PNG</span>
+                    </div>
+                </div>
+
+                <!-- Zoom, Rotate, & Action Toolbar -->
+                <div class="img-viewer-tools">
+                    <button class="btn-img-tool" id="btn-img-zoom-out" title="ย่อรูป (Zoom Out - Wheel Down)">
+                        <i class="fa-solid fa-magnifying-glass-minus"></i>
+                    </button>
+                    <span class="img-zoom-level" id="img-zoom-level-text">100%</span>
+                    <button class="btn-img-tool" id="btn-img-zoom-in" title="ขยายรูป (Zoom In - Wheel Up)">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                    </button>
+                    <button class="btn-img-tool" id="btn-img-zoom-reset" title="คืนค่าขนาดเดิม (Reset Zoom)">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                    <div class="tool-sep"></div>
+                    <button class="btn-img-tool" id="btn-img-rotate-left" title="หมุนซ้าย 90°">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <button class="btn-img-tool" id="btn-img-rotate-right" title="หมุนขวา 90°">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <div class="tool-sep"></div>
+                    <button class="btn-img-tool" id="btn-img-download" title="ดาวน์โหลดรูปนี้">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <button class="btn-img-tool btn-danger-tool" id="btn-img-delete" title="ลบรูปภาพนี้">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    <button class="btn-img-tool btn-close-tool" id="btn-close-image-viewer" title="ปิดหน้าต่าง (Esc)">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Image Viewport Area with Pan & Zoom -->
+            <div class="img-viewer-viewport" id="img-viewer-viewport">
+                <button class="btn-nav-arrow btn-nav-prev" id="btn-img-prev" title="รูปก่อนหน้า (ลูกศรซ้าย &larr;)">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                
+                <div class="img-canvas-stage" id="img-canvas-stage">
+                    <img id="img-viewer-main-src" src="" alt="Main Preview" draggable="false">
+                </div>
+
+                <button class="btn-nav-arrow btn-nav-next" id="btn-img-next" title="รูปถัดไป (ลูกศรขวา &rarr;)">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Bottom Gallery Filmstrip / Thumbnail Bar -->
+            <div class="img-viewer-bottom-bar">
+                <div class="img-details-chips">
+                    <span id="img-chip-date"><i class="fa-solid fa-calendar"></i> -</span>
+                    <span id="img-chip-size"><i class="fa-solid fa-weight-hanging"></i> -</span>
+                    <span id="img-chip-counter">1 / 1</span>
+                </div>
+                <div class="img-thumbnails-strip" id="img-thumbnails-strip">
+                    <!-- Dynamic thumbnails of all images rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- CUSTOM CONTEXT MENU (Feature 8 & Feature 9) -->
+    <!-- ================================================================= -->
+    <div class="os-context-menu" id="custom-context-menu" style="display: none;">
+        
+        <!-- Context Menu Items when clicking on a Document / Folder -->
+        <div class="context-group" id="context-item-actions">
+            <button class="context-menu-item" id="ctx-open">
+                <i class="fa-solid fa-folder-open"></i>
+                <span>เปิด (Open)</span>
+            </button>
+            <button class="context-menu-item" id="ctx-download">
+                <i class="fa-solid fa-download"></i>
+                <span>ดาวน์โหลด (Download)</span>
+            </button>
+            <button class="context-menu-item" id="ctx-star">
+                <i class="fa-solid fa-star"></i>
+                <span>ติดดาว / ยกเลิกติดดาว</span>
+            </button>
+            <div class="context-divider"></div>
+            <!-- Feature 8: เปลี่ยนชื่อ -->
+            <button class="context-menu-item" id="ctx-rename">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>เปลี่ยนชื่อ (Rename)</span>
+            </button>
+        </div>
+
+        <!-- Feature 9: Folders Menu Option -->
+        <div class="context-group">
+            <button class="context-menu-item" id="ctx-new-folder">
+                <i class="fa-solid fa-folder-plus"></i>
+                <span>Folders (สร้างโฟลเดอร์ใหม่)</span>
+            </button>
+            <button class="context-menu-item" id="ctx-merge">
+                <i class="fa-solid fa-object-group"></i>
+                <span>รวมเอกสาร (Merge)</span>
+            </button>
+        </div>
+
+        <div class="context-divider"></div>
+
+        <!-- Feature 4 & 5: ลบ / กู้คืน / ลบถาวร -->
+        <div class="context-group" id="context-trash-actions">
+            <button class="context-menu-item item-danger" id="ctx-delete">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>ลบเอกสาร (Delete)</span>
+            </button>
+            <button class="context-menu-item item-success" id="ctx-restore" style="display: none;">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>กู้เอกสารคืน (Restore)</span>
+            </button>
+            <button class="context-menu-item item-danger" id="ctx-delete-permanent" style="display: none;">
+                <i class="fa-solid fa-fire-flame-curved"></i>
+                <span>ลบถาวร (Permanent Delete)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- App Logic Script -->
+    <script src="app.js"></script>
+</body>
+</html>
